@@ -92,7 +92,7 @@
     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Sound</h2>
       <div id="drop-zone" class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-violet-400">
-        <p class="text-gray-500 text-sm">Drag & drop .mp3 or .wav files here, or <span class="text-violet-600 font-medium">click to browse</span></p>
+        <p id="drop-zone-text" class="text-gray-500 text-sm">Drag & drop .mp3 or .wav files here, or <span class="text-violet-600 font-medium">click to browse</span></p>
         <input type="file" id="file-input" accept=".mp3,.wav" class="hidden" multiple>
       </div>
       <div id="upload-status" class="mt-3 text-sm text-gray-500 hidden"></div>
@@ -112,6 +112,7 @@
   <script>
     const API = '';
     const player = document.getElementById('audio-player');
+    let wavOnly = false; // Set to true on Windows (PowerShell only supports .wav)
 
     // Escape HTML to prevent XSS
     function esc(str) {
@@ -159,7 +160,8 @@
       container.innerHTML = '';
 
       if (sounds.length === 0) {
-        container.innerHTML = '<p class="text-xs text-gray-300">No sounds — add .mp3 or .wav files above</p>';
+        const formats = wavOnly ? '.wav' : '.mp3 or .wav';
+        container.innerHTML = `<p class="text-xs text-gray-300">No sounds — add ${formats} files above</p>`;
         return;
       }
 
@@ -360,7 +362,22 @@
       }
     });
 
+    // Detect platform and restrict to .wav on Windows
+    async function detectPlatform() {
+      try {
+        const res = await fetch(`${API}/api/status`);
+        const data = await res.json();
+        if (data.platform && data.platform.wav_only) {
+          wavOnly = true;
+          document.getElementById('file-input').accept = '.wav';
+          document.getElementById('drop-zone-text').innerHTML =
+            'Drag & drop .wav files here, or <span class="text-violet-600 font-medium">click to browse</span>';
+        }
+      } catch {}
+    }
+
     // Init
+    detectPlatform();
     loadConfig();
     loadSounds();
     loadVerify();

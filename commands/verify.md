@@ -11,7 +11,7 @@ Run ALL of these checks:
 1. Fix permissions (make scripts executable):
 
 ```bash
-chmod +x "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/gui-server.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/gui-server.py" 2>/dev/null && echo "Permissions OK"
+chmod +x "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/gui-server.sh" 2>/dev/null && echo "Permissions OK"
 ```
 
 2. Check sound files exist:

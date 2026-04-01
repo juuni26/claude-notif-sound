@@ -296,7 +296,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "version": "1.0.0",
                 "config": get_config(),
                 "sounds": list_sounds(),
-                "hooks": ["Stop", "Notification", "PreToolUse (AskUserQuestion)", "PermissionRequest"]
+                "hooks": ["Stop", "Notification", "PreToolUse (AskUserQuestion)", "PermissionRequest"],
+                "platform": {
+                    "os": platform.system(),
+                    "wav_only": _is_windows(),
+                },
             })
         elif parsed.path.startswith("/sounds/"):
             # Serve sound files for browser playback — validate path stays in SOUNDS_DIR
@@ -417,14 +421,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                         file_data = part_body
 
             if filename and file_data:
-                if filename.lower().endswith((".mp3", ".wav")):
+                allowed = (".wav",) if _is_windows() else (".mp3", ".wav")
+                if filename.lower().endswith(allowed):
                     os.makedirs(SOUNDS_DIR, exist_ok=True)
                     dest = os.path.join(SOUNDS_DIR, filename)
                     with open(dest, "wb") as f:
                         f.write(file_data)
                     self._json_response({"success": True, "file": filename})
                 else:
-                    self._json_response({"error": "Only .mp3 and .wav files are supported"}, 400)
+                    msg = "Only .wav files are supported on Windows" if _is_windows() else "Only .mp3 and .wav files are supported"
+                    self._json_response({"error": msg}, 400)
             else:
                 self._json_response({"error": "No file provided"}, 400)
         else:

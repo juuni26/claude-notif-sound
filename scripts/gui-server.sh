@@ -8,14 +8,56 @@ PID_FILE="$DATA_DIR/gui.pid"
 PORT=6998
 ACTION="${1:-start}"
 
+# Kill a process and its entire tree (cross-platform)
+kill_tree() {
+  local pid="$1"
+  if [ -z "$pid" ]; then return; fi
+  # Windows (MSYS/Git Bash): use taskkill to kill process tree
+  if command -v taskkill &>/dev/null; then
+    taskkill //PID "$pid" //T //F &>/dev/null
+  else
+    # Unix: kill process group, fall back to single kill
+    kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null
+  fi
+}
+
+# Kill any process listening on our port
+kill_port() {
+  if command -v netstat &>/dev/null; then
+    # Windows: parse netstat for PIDs on our port
+    netstat -ano 2>/dev/null | grep "127.0.0.1:$PORT" | grep "LISTENING" | while read -r line; do
+      local pid
+      pid=$(echo "$line" | awk '{print $NF}')
+      if [ -n "$pid" ] && [ "$pid" != "0" ]; then
+        kill_tree "$pid"
+      fi
+    done
+  elif command -v lsof &>/dev/null; then
+    # macOS/Linux: use lsof
+    lsof -ti :"$PORT" 2>/dev/null | while read -r pid; do
+      kill_tree "$pid"
+    done
+  fi
+}
+
+stop_server() {
+  # Kill PID from pid file
+  if [ -f "$PID_FILE" ]; then
+    OLD_PID=$(cat "$PID_FILE")
+    kill_tree "$OLD_PID"
+    rm -f "$PID_FILE"
+  fi
+  # Kill anything still on the port
+  kill_port
+}
+
 case "$ACTION" in
   start)
-    # Kill existing server if running
-    if [ -f "$PID_FILE" ]; then
-      OLD_PID=$(cat "$PID_FILE")
-      kill "$OLD_PID" 2>/dev/null
-      rm -f "$PID_FILE"
-    fi
+    # Stop any existing server (pid file + port cleanup)
+    stop_server
+
+    # Brief pause to let port release
+    sleep 1
 
     # Start Python HTTP server with custom handler
     python3 "$PLUGIN_ROOT/scripts/gui-server.py" "$PLUGIN_ROOT" "$DATA_DIR" "$PORT" &
@@ -36,14 +78,8 @@ case "$ACTION" in
     echo "GUI server started on http://localhost:$PORT (PID: $SERVER_PID)"
     ;;
   stop)
-    if [ -f "$PID_FILE" ]; then
-      PID=$(cat "$PID_FILE")
-      kill "$PID" 2>/dev/null
-      rm -f "$PID_FILE"
-      echo "GUI server stopped"
-    else
-      echo "No GUI server running"
-    fi
+    stop_server
+    echo "GUI server stopped"
     ;;
   *)
     echo "Usage: gui-server.sh [start|stop]"

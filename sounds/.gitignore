@@ -1,4 +1,4 @@
-# User sounds — only track the default sample
+# Ignore user sounds but always track the default samples
 *.mp3
 *.wav
 !default.mp3
