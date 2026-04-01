@@ -4,9 +4,13 @@
 import http.server
 import json
 import os
+import platform
+import random
+import shutil
+import stat
+import subprocess
 import sys
 import urllib.parse
-import html
 import re
 
 PLUGIN_ROOT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -59,6 +63,185 @@ def _safe_path(base, untrusted):
     return resolved
 
 
+SCRIPTS = ["play-sound.sh", "gui-server.sh", "gui-server.py"]
+
+
+def _is_executable(path):
+    """Check if a file exists and has the executable bit set for the owner."""
+    try:
+        return os.path.isfile(path) and (os.stat(path).st_mode & stat.S_IXUSR) != 0
+    except OSError:
+        return False
+
+
+def _detect_player():
+    """Detect the available audio player command for the current OS."""
+    system = platform.system()
+    if system == "Darwin":
+        path = shutil.which("afplay")
+        if path:
+            return {"name": "afplay", "path": path}
+    elif system == "Linux":
+        for cmd in ("paplay", "aplay"):
+            path = shutil.which(cmd)
+            if path:
+                return {"name": cmd, "path": path}
+    else:
+        for cmd in ("paplay", "powershell.exe"):
+            path = shutil.which(cmd)
+            if path:
+                return {"name": cmd, "path": path}
+    return None
+
+
+def verify_setup():
+    """Run all verification checks and return a structured result."""
+    checks = []
+    all_ok = True
+
+    # 1. Script permissions
+    scripts_dir = os.path.join(PLUGIN_ROOT, "scripts")
+    for name in SCRIPTS:
+        path = os.path.join(scripts_dir, name)
+        exists = os.path.isfile(path)
+        executable = _is_executable(path) if exists else False
+        ok = exists and executable
+        if not ok:
+            all_ok = False
+        checks.append({
+            "id": f"script_{name}",
+            "label": f"Script: {name}",
+            "ok": ok,
+            "detail": "executable" if ok else ("missing" if not exists else "not executable"),
+        })
+
+    # 2. Sound files
+    sounds = list_sounds()
+    sounds_ok = len(sounds) > 0
+    if not sounds_ok:
+        all_ok = False
+    checks.append({
+        "id": "sounds",
+        "label": "Sound files",
+        "ok": sounds_ok,
+        "detail": f"{len(sounds)} sound(s) found" if sounds_ok else "no .mp3 or .wav files in sounds/",
+    })
+
+    # 3. Audio player
+    player = _detect_player()
+    player_ok = player is not None
+    if not player_ok:
+        all_ok = False
+    checks.append({
+        "id": "player",
+        "label": "Audio player",
+        "ok": player_ok,
+        "detail": player["name"] if player else "no supported player found",
+    })
+
+    # 4. Data directory writable
+    data_ok = False
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        test_file = os.path.join(DATA_DIR, ".write-test")
+        with open(test_file, "w") as f:
+            f.write("ok")
+        os.remove(test_file)
+        data_ok = True
+    except OSError:
+        pass
+    if not data_ok:
+        all_ok = False
+    checks.append({
+        "id": "data_dir",
+        "label": "Data directory",
+        "ok": data_ok,
+        "detail": "writable" if data_ok else "not writable",
+    })
+
+    # 5. Config readable
+    cfg = get_config()
+    checks.append({
+        "id": "config",
+        "label": "Config",
+        "ok": True,
+        "detail": f"volume={cfg.get('volume', 4)}",
+    })
+
+    return {"ok": all_ok, "checks": checks}
+
+
+def fix_permissions():
+    """Fix executable permissions on all plugin scripts. Returns list of fixed files."""
+    fixed = []
+    scripts_dir = os.path.join(PLUGIN_ROOT, "scripts")
+    for name in SCRIPTS:
+        path = os.path.join(scripts_dir, name)
+        if os.path.isfile(path) and not _is_executable(path):
+            try:
+                current = os.stat(path).st_mode
+                os.chmod(path, current | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+                fixed.append(name)
+            except OSError:
+                pass
+    return fixed
+
+
+def play_sound(filename=None):
+    """Play a sound file through the system audio player at the configured volume.
+
+    If filename is None, picks a random sound. Returns a dict with success/error info.
+    """
+    sounds = list_sounds()
+    if not sounds:
+        return {"error": "No sound files found"}
+
+    if filename:
+        file_path = _safe_path(SOUNDS_DIR, filename)
+        if not file_path or not os.path.isfile(file_path):
+            return {"error": "Sound file not found"}
+        if not filename.lower().endswith((".mp3", ".wav")):
+            return {"error": "Unsupported format"}
+    else:
+        chosen = random.choice(sounds)
+        filename = chosen["name"]
+        file_path = os.path.join(SOUNDS_DIR, filename)
+
+    player = _detect_player()
+    if not player:
+        return {"error": "No audio player available"}
+
+    cfg = get_config()
+    volume = cfg.get("volume", 4)
+
+    try:
+        system = platform.system()
+        if system == "Darwin":
+            afplay_vol = round(volume / 10, 1)
+            subprocess.Popen(
+                [player["path"], "-v", str(afplay_vol), file_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        elif system == "Linux" and player["name"] == "paplay":
+            pa_vol = int(volume * 6553.6)
+            subprocess.Popen(
+                [player["path"], "--volume=" + str(pa_vol), file_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        else:
+            subprocess.Popen(
+                [player["path"], file_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+    except OSError as e:
+        return {"error": f"Failed to play: {e.strerror}"}
+
+    return {"success": True, "file": filename, "volume": volume}
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=GUI_DIR, **kwargs)
@@ -70,6 +253,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._json_response(get_config())
         elif parsed.path == "/api/sounds":
             self._json_response(list_sounds())
+        elif parsed.path == "/api/verify":
+            self._json_response(verify_setup())
         elif parsed.path == "/api/status":
             self._json_response({
                 "plugin": "notif-sound",
@@ -127,6 +312,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                     return
             save_config(cfg)
             self._json_response(cfg)
+
+        elif parsed.path == "/api/play":
+            result = play_sound()
+            status = 200 if result.get("success") else 400
+            self._json_response(result, status)
+
+        elif parsed.path.startswith("/api/play/"):
+            filename = urllib.parse.unquote(parsed.path[len("/api/play/"):])
+            if not filename or "/" in filename or "\\" in filename or filename in (".", ".."):
+                self._json_response({"error": "Invalid filename"}, 400)
+                return
+            result = play_sound(filename)
+            status = 200 if result.get("success") else 400
+            self._json_response(result, status)
+
+        elif parsed.path == "/api/verify/fix":
+            fixed = fix_permissions()
+            result = verify_setup()
+            result["fixed"] = fixed
+            self._json_response(result)
 
         elif parsed.path == "/api/sounds/upload":
             content_type = self.headers.get("Content-Type", "")
@@ -216,13 +421,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def _json_response(self, data, status=200):
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
-        self.send_header("Access-Control-Allow-Origin", "http://localhost:6998")
+        self.send_header("Access-Control-Allow-Origin", f"http://localhost:{PORT}")
         self.end_headers()
         self.wfile.write(json.dumps(data).encode())
 
     def do_OPTIONS(self):
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "http://localhost:6998")
+        self.send_header("Access-Control-Allow-Origin", f"http://localhost:{PORT}")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()

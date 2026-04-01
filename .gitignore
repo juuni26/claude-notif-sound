@@ -3,3 +3,9 @@
 
 # Plugin data (runtime)
 *.pid
+
+# Python bytecode
+__pycache__/
+
+# Local dev settings
+.claude/settings.local.json

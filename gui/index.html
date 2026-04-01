@@ -27,6 +27,23 @@
       </div>
     </div>
 
+    <!-- Status Banner -->
+    <div id="status-banner" class="rounded-xl border p-4 mb-6 hidden">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span id="status-icon" class="w-3 h-3 rounded-full flex-shrink-0"></span>
+          <div>
+            <span id="status-title" class="font-semibold text-sm"></span>
+            <p id="status-detail" class="text-xs text-gray-500 mt-0.5"></p>
+          </div>
+        </div>
+        <button id="status-fix-btn" class="hidden text-xs font-medium px-3 py-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors">Fix Now</button>
+      </div>
+      <div id="status-checks" class="mt-3 pt-3 border-t border-gray-100 hidden">
+        <div id="status-checks-list" class="space-y-1.5"></div>
+      </div>
+    </div>
+
     <!-- Volume Control -->
     <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
@@ -38,7 +55,10 @@
         <input type="range" id="volume-slider" min="1" max="10" value="4" class="flex-1">
         <span class="text-gray-400 text-sm">10</span>
       </div>
-      <p class="text-xs text-gray-400 mt-3">Volume acts as a limiter — it controls how loud sounds play relative to your device's current system volume. Setting 10 = 100% of system volume, not max loudness. To hear louder sounds, raise your OS volume.</p>
+      <div class="flex items-center justify-between mt-4">
+        <p class="text-xs text-gray-400 flex-1">Volume acts as a limiter — it controls how loud sounds play relative to your device's current system volume. Setting 10 = 100% of system volume, not max loudness.</p>
+        <button id="test-sound-btn" onclick="playRandom()" class="ml-4 text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors flex-shrink-0">Test Sound</button>
+      </div>
     </div>
 
     <!-- Active Hooks -->
@@ -110,7 +130,7 @@
       player.volume = parseInt(slider.value) / 10;
     });
 
-    slider.addEventListener('change', () => {
+    function saveVolume() {
       clearTimeout(saveTimeout);
       saveTimeout = setTimeout(() => {
         fetch(`${API}/api/config`, {
@@ -119,7 +139,9 @@
           body: JSON.stringify({ volume: parseInt(slider.value) })
         });
       }, 300);
-    });
+    }
+
+    slider.addEventListener('change', saveVolume);
 
     // Load config
     async function loadConfig() {
@@ -171,11 +193,33 @@
       });
     }
 
-    // Play sound in browser at current volume
-    function playSound(filename) {
-      player.src = `${API}/sounds/${encodeURIComponent(filename)}`;
-      player.volume = parseInt(slider.value) / 10;
-      player.play();
+    // Play sound through system audio at configured volume
+    async function playSound(filename) {
+      try {
+        const res = await fetch(`${API}/api/play/${encodeURIComponent(filename)}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          alert(data.error);
+        }
+      } catch {
+        // Fallback: browser audio if server play fails
+        player.src = `${API}/sounds/${encodeURIComponent(filename)}`;
+        player.volume = parseInt(slider.value) / 10;
+        player.play();
+      }
+    }
+
+    // Play random sound through system audio
+    async function playRandom() {
+      try {
+        const res = await fetch(`${API}/api/play`, { method: 'POST' });
+        const data = await res.json();
+        if (data.error) {
+          alert(data.error);
+        }
+      } catch {
+        // Silently fail
+      }
     }
 
     // Delete sound
@@ -223,9 +267,103 @@
       setTimeout(() => uploadStatus.classList.add('hidden'), 3000);
     }
 
+    // Status verification
+    const statusBanner = document.getElementById('status-banner');
+    const statusIcon = document.getElementById('status-icon');
+    const statusTitle = document.getElementById('status-title');
+    const statusDetail = document.getElementById('status-detail');
+    const statusFixBtn = document.getElementById('status-fix-btn');
+    const statusChecks = document.getElementById('status-checks');
+    const statusChecksList = document.getElementById('status-checks-list');
+
+    function renderStatus(data) {
+      statusBanner.classList.remove('hidden');
+
+      if (data.ok) {
+        statusBanner.className = 'rounded-xl border border-green-200 bg-green-50 p-4 mb-6';
+        statusIcon.className = 'w-3 h-3 rounded-full flex-shrink-0 bg-green-500';
+        statusTitle.textContent = 'Notifications Working';
+        statusTitle.className = 'font-semibold text-sm text-green-800';
+        statusDetail.textContent = 'All checks passed — sounds will play when Claude needs you.';
+        statusFixBtn.classList.add('hidden');
+        statusChecks.classList.add('hidden');
+      } else {
+        statusBanner.className = 'rounded-xl border border-red-200 bg-red-50 p-4 mb-6';
+        statusIcon.className = 'w-3 h-3 rounded-full flex-shrink-0 bg-red-500';
+        statusTitle.textContent = 'Notifications Not Working';
+        statusTitle.className = 'font-semibold text-sm text-red-800';
+
+        const failures = data.checks.filter(c => !c.ok);
+        statusDetail.textContent = failures.map(c => c.detail).join(', ');
+
+        const hasPermIssue = data.checks.some(c => !c.ok && c.detail === 'not executable');
+        if (hasPermIssue) {
+          statusFixBtn.classList.remove('hidden');
+        } else {
+          statusFixBtn.classList.add('hidden');
+        }
+
+        statusChecks.classList.remove('hidden');
+        statusChecksList.innerHTML = '';
+        data.checks.forEach(c => {
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-2 text-xs';
+
+          const dot = document.createElement('span');
+          dot.className = c.ok
+            ? 'w-1.5 h-1.5 rounded-full bg-green-500'
+            : 'w-1.5 h-1.5 rounded-full bg-red-500';
+
+          const label = document.createElement('span');
+          label.className = c.ok ? 'text-gray-600' : 'text-red-700 font-medium';
+          label.textContent = c.label;
+
+          const detail = document.createElement('span');
+          detail.className = 'ml-auto text-gray-400';
+          detail.textContent = c.detail;
+
+          row.append(dot, label, detail);
+          statusChecksList.appendChild(row);
+        });
+      }
+    }
+
+    async function loadVerify() {
+      try {
+        const res = await fetch(`${API}/api/verify`);
+        if (!res.ok) return;
+        const data = await res.json();
+        renderStatus(data);
+      } catch {
+        // Server unreachable — don't show banner
+      }
+    }
+
+    statusFixBtn.addEventListener('click', async () => {
+      statusFixBtn.disabled = true;
+      statusFixBtn.textContent = 'Fixing...';
+      try {
+        const res = await fetch(`${API}/api/verify/fix`, { method: 'POST' });
+        if (!res.ok) return;
+        const data = await res.json();
+        renderStatus(data);
+        if (data.fixed && data.fixed.length > 0) {
+          statusFixBtn.textContent = 'Fixed!';
+          setTimeout(() => { statusFixBtn.textContent = 'Fix Now'; statusFixBtn.disabled = false; }, 2000);
+        } else {
+          statusFixBtn.textContent = 'Fix Now';
+          statusFixBtn.disabled = false;
+        }
+      } catch {
+        statusFixBtn.textContent = 'Fix Now';
+        statusFixBtn.disabled = false;
+      }
+    });
+
     // Init
     loadConfig();
     loadSounds();
+    loadVerify();
   </script>
 </body>
 </html>

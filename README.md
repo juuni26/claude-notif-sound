@@ -80,7 +80,7 @@ claude --plugin-dir ~/.claude/plugins/local/notif-sound
 
 ### Add your own sounds
 
-The plugin ships with `default.mp3` — a royalty-free sound from [Pixabay](https://pixabay.com/sound-effects/people-fah-469417/). Add your own `.mp3` or `.wav` files for variety — a random sound is picked each time a hook fires.
+The plugin ships with `default.mp3` — a royalty-free sound from [Pixabay](https://pixabay.com/sound-effects/technology-new-notification-036-485897/). Add your own `.mp3` or `.wav` files for variety — a random sound is picked each time a hook fires.
 
 ```bash
 # Use the slash command
@@ -100,7 +100,10 @@ The plugin ships with `default.mp3` — a royalty-free sound from [Pixabay](http
 | `/notif-sound:add <path>` | Add a sound file |
 | `/notif-sound:remove <name>` | Remove a sound file |
 | `/notif-sound:gui` | Open web dashboard |
+| `/notif-sound:status` | Check plugin health |
+| `/notif-sound:verify` | Verify setup and fix issues |
 | `/notif-sound:test-hooks` | Test all 4 hooks sequentially |
+| `/notif-sound:uninstall` | Cleanly remove the plugin |
 
 ## Hook Events
 
@@ -113,7 +116,7 @@ The plugin ships with `default.mp3` — a royalty-free sound from [Pixabay](http
 
 ## Sounds
 
-The plugin includes `default.mp3` (royalty-free, from [Pixabay](https://pixabay.com/sound-effects/people-fah-469417/)). Drop your own `.mp3` or `.wav` files into the `sounds/` directory — a random sound is picked each time.
+The plugin includes `default.mp3` (royalty-free, from [Pixabay](https://pixabay.com/sound-effects/technology-new-notification-036-485897/)). Drop your own `.mp3` or `.wav` files into the `sounds/` directory — a random sound is picked each time.
 
 ```
 sounds/
@@ -175,14 +178,17 @@ notif-sound/
 │   ├── gui.md               # /notif-sound:gui
 │   ├── list.md              # /notif-sound:list
 │   ├── remove.md            # /notif-sound:remove
+│   ├── status.md            # /notif-sound:status
 │   ├── test.md              # /notif-sound:test
 │   ├── test-hooks.md        # /notif-sound:test-hooks
+│   ├── uninstall.md         # /notif-sound:uninstall
+│   ├── verify.md            # /notif-sound:verify
 │   └── volume.md            # /notif-sound:volume
 ├── gui/
 │   └── index.html           # Single-file web dashboard
 ├── sounds/                  # Drop .mp3/.wav files here
 │   ├── default.mp3          # Included sample
-│   └── default.wav          # WAV version (WSL compatibility)
+│   └── default.wav          # WAV version of default sound
 ├── .gitignore
 └── LICENSE
 ```
@@ -221,13 +227,3 @@ No manual configuration in `~/.claude/settings.json` is needed. See the [hooks r
 - [Claude Code Skills](https://code.claude.com/docs/skills) — how slash commands work
 - [Claude Code MCP](https://code.claude.com/docs/mcp) — Model Context Protocol integration
 - [Claude Code Documentation](https://code.claude.com/docs) — full docs index
-
-## Contributing
-
-Contributions welcome! Feel free to open issues or submit PRs.
-
-**Sound files**: Don't commit copyrighted audio. Use royalty-free sounds only.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
