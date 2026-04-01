@@ -1,5 +1,5 @@
 ![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)
-![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux%20|%20WSL-lightgrey)
+![Platform](https://img.shields.io/badge/platform-macOS%20|%20Linux%20|%20Windows%20|%20WSL-lightgrey)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 # notif-sound
@@ -23,7 +23,7 @@ The problem is that Claude Code runs completely silent. There's no sound, no ale
 - **Custom sounds** — add your own .mp3/.wav files with `/notif-sound:add`
 - **Web GUI dashboard** — visual sound management at `localhost:6998`
 - **Smart dedup** — PID-based tracking skips if a sound is already playing
-- **Cross-OS** — macOS (`afplay`), Linux (`paplay`/`aplay`), WSL (`powershell.exe`)
+- **Cross-OS** — macOS (`afplay`), Linux (`paplay`/`aplay`), Windows (`powershell`), WSL (`powershell.exe`)
 - **Minimal dependencies** — uses built-in OS audio tools + Python 3 (pre-installed on most systems)
 - **Non-blocking** — all playback runs in background, never slows down Claude
 
@@ -35,6 +35,7 @@ You likely don't need to install anything — the plugin uses tools that come pr
 |----------|--------------|-------------------|
 | **macOS** | `afplay`, `python3` | Yes — both are built-in on macOS |
 | **Linux** | `python3`, `paplay` or `aplay` | Usually yes. `python3` ships with most distros. `paplay` (PulseAudio) is standard on desktop installs; `aplay` (ALSA) is the fallback |
+| **Windows** | `python3`, `powershell` | `powershell` is built-in. Install Python 3 from [python.org](https://www.python.org/downloads/) (check "Add to PATH") or via `winget install Python.Python.3` |
 | **WSL** | `python3` | Yes — pre-installed in WSL. Audio falls back to `powershell.exe` if `paplay` isn't available |
 
 **If something is missing:**
@@ -64,6 +65,8 @@ sudo apt install python3
 ```
 
 Hooks activate automatically. That's it.
+
+> **Important:** Make sure to run `/reload-plugins` after installing or uninstalling the plugin to apply changes.
 
 ### Option B: Local install
 
@@ -155,7 +158,10 @@ Stop the server with `/notif-sound:gui stop`.
 |----|-------------|---------------|---------|
 | macOS | `afplay` | Yes (0.0-1.0) | .mp3, .wav, .aac, .m4a |
 | Linux | `paplay` (primary), `aplay` (fallback) | Yes (`paplay`), No (`aplay`) | .mp3 (`paplay`), .wav (both) |
+| Windows | `powershell` (`Media.SoundPlayer`) | No (system volume) | .wav only |
 | WSL | `paplay` (if available), `powershell.exe` (fallback) | Yes (`paplay`), No (PowerShell) | .mp3 (`paplay`), .wav (PowerShell) |
+
+> **Windows note:** Only `.wav` files are supported on native Windows because PowerShell's `Media.SoundPlayer` does not support `.mp3`. The plugin ships with `default.wav` which works out of the box. When adding custom sounds on Windows, use `.wav` format.
 
 ## How Deduplication Works
 

@@ -29,11 +29,21 @@ if [ -f "$CONFIG_FILE" ]; then
   fi
 fi
 
+# Detect OS once
+OS="$(uname -s)"
+
 # Collect sound files from sounds/ directory
+# On Windows (MINGW/MSYS), only .wav is supported (PowerShell Media.SoundPlayer)
 CANDIDATES=()
-while IFS= read -r f; do
-  [ -n "$f" ] && CANDIDATES+=("$f")
-done < <(find "$SOUNDS_DIR" -maxdepth 1 \( -name "*.mp3" -o -name "*.wav" \) 2>/dev/null)
+if [[ "$OS" == MINGW* ]] || [[ "$OS" == MSYS* ]]; then
+  while IFS= read -r f; do
+    [ -n "$f" ] && CANDIDATES+=("$f")
+  done < <(find "$SOUNDS_DIR" -maxdepth 1 -name "*.wav" 2>/dev/null)
+else
+  while IFS= read -r f; do
+    [ -n "$f" ] && CANDIDATES+=("$f")
+  done < <(find "$SOUNDS_DIR" -maxdepth 1 \( -name "*.mp3" -o -name "*.wav" \) 2>/dev/null)
+fi
 
 # No sounds found
 if [ ${#CANDIDATES[@]} -eq 0 ]; then
@@ -44,7 +54,6 @@ fi
 SOUND="${CANDIDATES[$((RANDOM % ${#CANDIDATES[@]}))]}"
 
 # Detect OS and play
-OS="$(uname -s)"
 case "$OS" in
   Darwin)
     # macOS: volume 1-10 -> 0.1-1.0
@@ -63,6 +72,15 @@ case "$OS" in
       echo $! > "$PID_FILE"
     fi
     ;;
+  MINGW*|MSYS*)
+    # Native Windows (Git Bash): convert path for PowerShell, .wav only
+    if command -v powershell.exe &>/dev/null; then
+      WIN_SOUND="$(cygpath -w "$SOUND" 2>/dev/null || echo "$SOUND")"
+      SAFE_SOUND="${WIN_SOUND//\'/\'\'}"
+      powershell.exe -c "(New-Object Media.SoundPlayer '$SAFE_SOUND').PlaySync()" &
+      echo $! > "$PID_FILE"
+    fi
+    ;;
   *)
     # WSL or unknown: try paplay, then powershell
     if command -v paplay &>/dev/null; then
@@ -70,8 +88,8 @@ case "$OS" in
       paplay --volume="$PA_VOL" "$SOUND" &
       echo $! > "$PID_FILE"
     elif command -v powershell.exe &>/dev/null; then
-      # Escape single quotes in path for PowerShell
-      SAFE_SOUND="${SOUND//\'/\'\'}"
+      WIN_SOUND="$(cygpath -w "$SOUND" 2>/dev/null || echo "$SOUND")"
+      SAFE_SOUND="${WIN_SOUND//\'/\'\'}"
       powershell.exe -c "(New-Object Media.SoundPlayer '$SAFE_SOUND').PlaySync()" &
       echo $! > "$PID_FILE"
     fi

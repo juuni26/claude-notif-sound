@@ -22,13 +22,13 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/gui-server.sh" stop 2>/dev/null; echo "GUI s
 2. Remove the plugin cache directory:
 
 ```bash
-rm -rf ~/.claude/plugins/cache/juuni26-plugins/notif-sound && echo "Cache removed" || echo "No cache found"
+rm -rf ~/.claude/plugins/cache/j26-plugins/notif-sound && echo "Cache removed" || echo "No cache found"
 ```
 
 3. Check if the marketplace directory is now empty, and clean it up if so:
 
 ```bash
-[ -d ~/.claude/plugins/cache/juuni26-plugins ] && [ -z "$(ls -A ~/.claude/plugins/cache/juuni26-plugins 2>/dev/null)" ] && rm -rf ~/.claude/plugins/cache/juuni26-plugins && echo "Marketplace cache cleaned" || echo "Marketplace cache has other plugins, kept"
+[ -d ~/.claude/plugins/cache/j26-plugins ] && [ -z "$(ls -A ~/.claude/plugins/cache/j26-plugins 2>/dev/null)" ] && rm -rf ~/.claude/plugins/cache/j26-plugins && echo "Marketplace cache cleaned" || echo "Marketplace cache has other plugins, kept"
 ```
 
 4. Ask the user if they also want to remove their saved config (volume settings). If yes:

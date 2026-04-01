@@ -66,10 +66,20 @@ def _safe_path(base, untrusted):
 SCRIPTS = ["play-sound.sh", "gui-server.sh", "gui-server.py"]
 
 
+def _is_windows():
+    """Detect Windows (native, Git Bash/MINGW, MSYS)."""
+    return sys.platform in ("win32", "msys") or platform.system() == "Windows"
+
+
 def _is_executable(path):
-    """Check if a file exists and has the executable bit set for the owner."""
+    """Check if a file exists and has the executable bit set for the owner.
+    On Windows, executable bits are meaningless — just check the file exists."""
     try:
-        return os.path.isfile(path) and (os.stat(path).st_mode & stat.S_IXUSR) != 0
+        if not os.path.isfile(path):
+            return False
+        if _is_windows():
+            return True
+        return (os.stat(path).st_mode & stat.S_IXUSR) != 0
     except OSError:
         return False
 
@@ -86,6 +96,10 @@ def _detect_player():
             path = shutil.which(cmd)
             if path:
                 return {"name": cmd, "path": path}
+    elif _is_windows():
+        path = shutil.which("powershell.exe") or shutil.which("powershell")
+        if path:
+            return {"name": "powershell.exe", "path": path}
     else:
         for cmd in ("paplay", "powershell.exe"):
             path = shutil.which(cmd)
@@ -172,7 +186,10 @@ def verify_setup():
 
 
 def fix_permissions():
-    """Fix executable permissions on all plugin scripts. Returns list of fixed files."""
+    """Fix executable permissions on all plugin scripts. Returns list of fixed files.
+    On Windows, chmod is a no-op on NTFS — permissions are always OK."""
+    if _is_windows():
+        return []
     fixed = []
     scripts_dir = os.path.join(PLUGIN_ROOT, "scripts")
     for name in SCRIPTS:
@@ -196,20 +213,30 @@ def play_sound(filename=None):
     if not sounds:
         return {"error": "No sound files found"}
 
+    player = _detect_player()
+    if not player:
+        return {"error": "No audio player available"}
+
+    # On Windows with PowerShell, only .wav is supported
+    win_wav_only = _is_windows() and player["name"] == "powershell.exe"
+
     if filename:
         file_path = _safe_path(SOUNDS_DIR, filename)
         if not file_path or not os.path.isfile(file_path):
             return {"error": "Sound file not found"}
         if not filename.lower().endswith((".mp3", ".wav")):
             return {"error": "Unsupported format"}
+        if win_wav_only and not filename.lower().endswith(".wav"):
+            return {"error": "Windows only supports .wav files"}
     else:
-        chosen = random.choice(sounds)
+        candidates = sounds
+        if win_wav_only:
+            candidates = [s for s in sounds if s["name"].lower().endswith(".wav")]
+        if not candidates:
+            return {"error": "No compatible sound files found (.wav required on Windows)"}
+        chosen = random.choice(candidates)
         filename = chosen["name"]
         file_path = os.path.join(SOUNDS_DIR, filename)
-
-    player = _detect_player()
-    if not player:
-        return {"error": "No audio player available"}
 
     cfg = get_config()
     volume = cfg.get("volume", 4)
@@ -227,6 +254,14 @@ def play_sound(filename=None):
             pa_vol = int(volume * 6553.6)
             subprocess.Popen(
                 [player["path"], "--volume=" + str(pa_vol), file_path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        elif _is_windows() and player["name"] == "powershell.exe":
+            win_path = os.path.abspath(file_path).replace("'", "''")
+            subprocess.Popen(
+                [player["path"], "-c",
+                 f"(New-Object Media.SoundPlayer '{win_path}').PlaySync()"],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
