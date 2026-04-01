@@ -2,6 +2,6 @@
   "name": "notif-sound",
   "version": "1.0.0",
   "description": "Never miss when Claude needs you — audio alerts when Claude finishes, asks a question, or waits for permission",
-  "author": { "name": "junakarda" },
+  "author": { "name": "juuni26" },
   "keywords": ["notification", "sounds", "audio", "alerts", "productivity"]
 }

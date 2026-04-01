@@ -1,0 +1,5 @@
+# User sounds — only track the default sample
+*.mp3
+*.wav
+!default.mp3
+!default.wav

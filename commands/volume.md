@@ -19,8 +19,9 @@ cat "${CLAUDE_PLUGIN_DATA}/config.json"
 
 ```bash
 python3 -c "
-import json, sys
+import json, sys, os
 cfg_path = '${CLAUDE_PLUGIN_DATA}/config.json'
+os.makedirs(os.path.dirname(cfg_path), exist_ok=True)
 try:
     with open(cfg_path) as f:
         cfg = json.load(f)
@@ -40,7 +41,7 @@ print(f'Volume set to {vol}/10')
 4. Play a test sound at the new volume:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh" all
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh"
 ```
 
 5. Report the new volume to the user.

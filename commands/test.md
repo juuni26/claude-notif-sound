@@ -1,16 +1,15 @@
 ---
 description: "Test play a random notification sound. Use when the user wants to hear what the notification sounds like."
-argument-hint: "[stop|question|notification|permission|all]"
 ---
 
 # Test Sound
 
 Play a random notification sound to test the setup.
 
-1. Run the play script with the optional category from `$ARGUMENTS` (default: `all`):
+1. Run the play script:
 
 ```bash
-bash "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh" ${ARGUMENTS:-all}
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh"
 ```
 
 2. Report to the user that the sound was played. If no sound was heard, suggest:
