@@ -44,8 +44,8 @@
       </div>
     </div>
 
-    <!-- Volume Control -->
-    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+    <!-- Volume Control (macOS/Linux) -->
+    <div id="volume-section" class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-gray-900">Volume</h2>
         <span id="volume-display" class="text-2xl font-bold text-violet-600">4</span>
@@ -58,6 +58,17 @@
       <div class="flex items-center justify-between mt-4">
         <p class="text-xs text-gray-400 flex-1">Volume acts as a limiter — it controls how loud sounds play relative to your device's current system volume. Setting 10 = 100% of system volume, not max loudness.</p>
         <button id="test-sound-btn" onclick="playRandom()" class="ml-4 text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors flex-shrink-0">Test Sound</button>
+      </div>
+    </div>
+
+    <!-- Volume Notice (Windows — volume control not supported) -->
+    <div id="volume-win-notice" class="bg-white rounded-xl border border-gray-200 p-6 mb-6 hidden">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Volume</h2>
+          <p class="text-sm text-gray-500 mt-1">Volume control is not supported on Windows. Adjust your system volume instead.</p>
+        </div>
+        <button onclick="playRandom()" class="ml-4 text-xs font-medium px-3 py-1.5 rounded-lg bg-violet-100 text-violet-700 hover:bg-violet-200 transition-colors flex-shrink-0">Test Sound</button>
       </div>
     </div>
 
@@ -372,6 +383,10 @@
           document.getElementById('file-input').accept = '.wav';
           document.getElementById('drop-zone-text').innerHTML =
             'Drag & drop .wav files here, or <span class="text-violet-600 font-medium">click to browse</span>';
+        }
+        if (data.platform && !data.platform.volume_supported) {
+          document.getElementById('volume-section').style.display = 'none';
+          document.getElementById('volume-win-notice').classList.remove('hidden');
         }
       } catch {}
     }

@@ -300,6 +300,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "platform": {
                     "os": platform.system(),
                     "wav_only": _is_windows(),
+                    "volume_supported": not _is_windows(),
                 },
             })
         elif parsed.path.startswith("/sounds/"):

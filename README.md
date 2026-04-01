@@ -75,7 +75,7 @@ The easiest way to manage your sounds and settings is through the built-in web d
 
 This opens a web dashboard at `http://localhost:6998` where you can:
 
-- **Adjust volume** — drag the slider from 1 to 10
+- **Adjust volume** — drag the slider from 1 to 10 (macOS/Linux only; hidden on Windows)
 - **Preview sounds** — click play on any sound in your library
 - **Add new sounds** — drag and drop `.wav` files (Windows) or `.mp3`/`.wav` files (macOS/Linux) right into the browser
 - **Remove sounds** — hover over a sound and click the delete button
@@ -92,7 +92,7 @@ To stop the dashboard server:
 ## Features
 
 - **4 hook events** — Stop, AskUserQuestion, PermissionRequest, Notification
-- **Volume control** — intuitive 1-10 scale via `/notif-sound:volume` or GUI slider
+- **Volume control** — intuitive 1-10 scale via `/notif-sound:volume` or GUI slider (macOS/Linux only; Windows uses system volume)
 - **Custom sounds** — add your own sound files, a random one plays each time
 - **Web GUI dashboard** — visual sound management at `localhost:6998`
 - **Smart dedup** — PID-based tracking skips if a sound is already playing
@@ -105,7 +105,7 @@ To stop the dashboard server:
 | Command | Description |
 |---------|-------------|
 | `/notif-sound:test` | Play a test sound |
-| `/notif-sound:volume <1-10>` | Set volume level |
+| `/notif-sound:volume <1-10>` | Set volume level (macOS/Linux only) |
 | `/notif-sound:list` | List all sounds |
 | `/notif-sound:add <path>` | Add a sound file |
 | `/notif-sound:remove <name>` | Remove a sound file |

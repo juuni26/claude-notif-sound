@@ -52,14 +52,20 @@ cat "${CLAUDE_PLUGIN_DATA}/config.json" 2>/dev/null || echo '{"volume": 4} (defa
 curl -s http://localhost:6998/api/status 2>/dev/null && echo "GUI_RUNNING" || echo "GUI_STOPPED"
 ```
 
-7. Present a clear status report to the user:
+7. Check the platform:
+
+```bash
+uname -s
+```
+
+8. Present a clear status report to the user:
 
    **Plugin Status**
    - Scripts: whether play-sound.sh and gui-server.sh are executable (fix with `chmod +x` if not)
    - Sounds: count of .mp3/.wav files found (suggest `/notif-sound:add` if none)
    - Audio player: which player was detected (afplay/paplay/aplay) or missing
    - Python 3: installed or missing
-   - Volume: current setting (1-10)
+   - Volume: current setting (1-10). If on Windows (uname starts with `MINGW` or `MSYS`), show "(not supported — system volume only)"
    - GUI: running or stopped
    - Overall: "All good" if everything passes, or list what needs fixing
 

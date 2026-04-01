@@ -7,6 +7,21 @@ argument-hint: "<1-10>"
 
 The user wants to change the notification sound volume.
 
+**Important:** First check the platform:
+
+```bash
+uname -s
+```
+
+If the output starts with `MINGW` or `MSYS` (Windows), inform the user:
+> Volume control is not supported on Windows — PowerShell's `Media.SoundPlayer` has no volume property. Adjust your system volume instead.
+
+Then stop — do not proceed with the steps below.
+
+---
+
+**On macOS/Linux**, proceed:
+
 1. If `$ARGUMENTS` is empty, read and report the current volume:
 
 ```bash

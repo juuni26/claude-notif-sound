@@ -13,6 +13,6 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/play-sound.sh"
 ```
 
 2. Report to the user that the sound was played. If no sound was heard, suggest:
-   - Check volume with `/notif-sound:volume`
+   - On macOS/Linux: check volume with `/notif-sound:volume`
+   - On Windows: adjust your system volume (volume control is not supported)
    - Check if sounds exist with `/notif-sound:list`
-   - Check system volume
