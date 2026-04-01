@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Sound files (users add their own)
+sounds/all/*.mp3
+sounds/stop/*.mp3
+sounds/question/*.mp3
+sounds/permission/*.mp3
+sounds/notification/*.mp3
+
+# Keep directory structure
+!sounds/all/.gitkeep
+!sounds/stop/.gitkeep
+!sounds/question/.gitkeep
+!sounds/permission/.gitkeep
+!sounds/notification/.gitkeep

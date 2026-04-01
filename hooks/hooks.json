@@ -1,0 +1,4 @@
+{
+  "description": "Audio alerts when Claude needs your attention (hooks managed via settings.json for local install)",
+  "hooks": {}
+}

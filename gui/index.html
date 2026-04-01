@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>notif-sound — Claude Code Notification Sounds</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .drop-zone { transition: all 0.2s; }
+    .drop-zone.drag-over { border-color: #8b5cf6; background: #f5f3ff; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #8b5cf6; cursor: pointer; }
+    input[type="range"] { -webkit-appearance: none; height: 6px; border-radius: 3px; background: #e5e7eb; outline: none; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center text-xl">&#x1f514;</div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">notif-sound</h1>
+          <p class="text-sm text-gray-500">Never miss when Claude needs you</p>
+        </div>
+        <span id="version-badge" class="ml-auto text-xs bg-violet-100 text-violet-700 px-2 py-1 rounded-full font-medium">v1.0.0</span>
+      </div>
+    </div>
+
+    <!-- Volume Control -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900">Volume</h2>
+        <span id="volume-display" class="text-2xl font-bold text-violet-600">4</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="text-gray-400 text-sm">1</span>
+        <input type="range" id="volume-slider" min="1" max="10" value="4" class="flex-1">
+        <span class="text-gray-400 text-sm">10</span>
+      </div>
+      <p class="text-xs text-gray-400 mt-3">Volume acts as a limiter — it controls how loud sounds play relative to your device's current system volume. Setting 10 = 100% of system volume, not max loudness. To hear louder sounds, raise your OS volume.</p>
+    </div>
+
+    <!-- Active Hooks -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Active Hooks</h2>
+      <div class="grid grid-cols-2 gap-3" id="hooks-list">
+        <div class="flex items-center gap-2 text-sm p-2 bg-green-50 rounded-lg">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          <span class="font-medium">Stop</span>
+          <span class="text-gray-400 ml-auto">Claude finished</span>
+        </div>
+        <div class="flex items-center gap-2 text-sm p-2 bg-green-50 rounded-lg">
+          <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+          <span class="font-medium">Notification</span>
+          <span class="text-gray-400 ml-auto">System alert</span>
+        </div>
+        <div class="flex items-center gap-2 text-sm p-2 bg-orange-50 rounded-lg">
+          <span class="w-2 h-2 bg-orange-500 rounded-full"></span>
+          <span class="font-medium">Question</span>
+          <span class="text-gray-400 ml-auto">Needs answer</span>
+        </div>
+        <div class="flex items-center gap-2 text-sm p-2 bg-orange-50 rounded-lg">
+          <span class="w-2 h-2 bg-orange-500 rounded-full"></span>
+          <span class="font-medium">Permission</span>
+          <span class="text-gray-400 ml-auto">Needs approval</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Zone -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Add Sound</h2>
+      <div class="flex gap-3 mb-4">
+        <select id="upload-category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white">
+          <option value="all">all (fallback)</option>
+          <option value="stop">stop</option>
+          <option value="question">question</option>
+          <option value="notification">notification</option>
+          <option value="permission">permission</option>
+        </select>
+      </div>
+      <div id="drop-zone" class="drop-zone border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-violet-400">
+        <p class="text-gray-500 text-sm">Drag & drop .mp3 or .wav files here, or <span class="text-violet-600 font-medium">click to browse</span></p>
+        <input type="file" id="file-input" accept=".mp3,.wav" class="hidden" multiple>
+      </div>
+      <div id="upload-status" class="mt-3 text-sm text-gray-500 hidden"></div>
+    </div>
+
+    <!-- Sound List -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Sounds</h2>
+      <div id="sounds-list" class="space-y-6">
+        <p class="text-gray-400 text-sm">Loading...</p>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audio-player"></audio>
+
+  <script>
+    const API = '';
+    const player = document.getElementById('audio-player');
+
+    // Volume
+    const slider = document.getElementById('volume-slider');
+    const display = document.getElementById('volume-display');
+    let saveTimeout;
+
+    slider.addEventListener('input', () => {
+      display.textContent = slider.value;
+      player.volume = parseInt(slider.value) / 10;
+    });
+
+    slider.addEventListener('change', () => {
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        fetch(`${API}/api/config`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ volume: parseInt(slider.value) })
+        });
+      }, 300);
+    });
+
+    // Load config
+    async function loadConfig() {
+      const res = await fetch(`${API}/api/config`);
+      const cfg = await res.json();
+      slider.value = cfg.volume || 4;
+      display.textContent = cfg.volume || 4;
+    }
+
+    // Load sounds
+    async function loadSounds() {
+      const res = await fetch(`${API}/api/sounds`);
+      const sounds = await res.json();
+      const container = document.getElementById('sounds-list');
+      container.innerHTML = '';
+
+      const categoryLabels = {
+        all: 'All (Fallback)',
+        stop: 'Stop — Claude finished',
+        question: 'Question — Claude asks you',
+        notification: 'Notification — System alert',
+        permission: 'Permission — Needs approval'
+      };
+
+      for (const [cat, files] of Object.entries(sounds)) {
+        const section = document.createElement('div');
+        section.innerHTML = `
+          <div class="flex items-center gap-2 mb-2">
+            <h3 class="text-sm font-semibold text-gray-700">${categoryLabels[cat] || cat}</h3>
+            <span class="text-xs text-gray-400">(${files.length})</span>
+          </div>
+        `;
+
+        if (files.length === 0) {
+          section.innerHTML += `<p class="text-xs text-gray-300 ml-2">No sounds</p>`;
+        } else {
+          const list = document.createElement('div');
+          list.className = 'space-y-1';
+          files.forEach(f => {
+            const item = document.createElement('div');
+            item.className = 'flex items-center gap-2 py-1.5 px-3 rounded-lg hover:bg-gray-50 group';
+            const sizeKB = (f.size / 1024).toFixed(0);
+            item.innerHTML = `
+              <button onclick="playSound('${cat}', '${f.name}')" class="text-violet-500 hover:text-violet-700 text-sm" title="Play">&#9654;</button>
+              <span class="text-sm text-gray-700 flex-1 truncate">${f.name}</span>
+              <span class="text-xs text-gray-400">${sizeKB} KB</span>
+              <button onclick="deleteSound('${cat}', '${f.name}')" class="text-red-400 hover:text-red-600 text-sm opacity-0 group-hover:opacity-100 transition-opacity" title="Delete">&#x2715;</button>
+            `;
+            list.appendChild(item);
+          });
+          section.appendChild(list);
+        }
+        container.appendChild(section);
+      }
+    }
+
+    // Play sound in browser at current volume
+    function playSound(category, filename) {
+      player.src = `${API}/sounds/${category}/${filename}`;
+      player.volume = parseInt(slider.value) / 10;
+      player.play();
+    }
+
+    // Delete sound
+    async function deleteSound(category, filename) {
+      if (!confirm(`Delete ${filename}?`)) return;
+      await fetch(`${API}/api/sounds/${category}/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+      loadSounds();
+    }
+
+    // Upload
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const uploadStatus = document.getElementById('upload-status');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      uploadFiles(e.dataTransfer.files);
+    });
+    fileInput.addEventListener('change', () => uploadFiles(fileInput.files));
+
+    async function uploadFiles(files) {
+      const category = document.getElementById('upload-category').value;
+      uploadStatus.classList.remove('hidden');
+
+      for (const file of files) {
+        uploadStatus.textContent = `Uploading ${file.name}...`;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', category);
+        const res = await fetch(`${API}/api/sounds/upload`, { method: 'POST', body: formData });
+        const result = await res.json();
+        if (result.error) {
+          uploadStatus.textContent = `Error: ${result.error}`;
+          uploadStatus.className = 'mt-3 text-sm text-red-500';
+        } else {
+          uploadStatus.textContent = `Added ${file.name} to ${category}`;
+          uploadStatus.className = 'mt-3 text-sm text-green-600';
+        }
+      }
+
+      loadSounds();
+      fileInput.value = '';
+      setTimeout(() => uploadStatus.classList.add('hidden'), 3000);
+    }
+
+    // Init
+    loadConfig();
+    loadSounds();
+  </script>
+</body>
+</html>
