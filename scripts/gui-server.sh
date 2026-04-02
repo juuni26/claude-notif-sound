@@ -8,6 +8,15 @@ PID_FILE="$DATA_DIR/gui.pid"
 PORT=6998
 ACTION="${1:-start}"
 
+# Detect available Python command (python3, python, py)
+PYTHON_CMD=""
+for cmd in python3 python py; do
+  if command -v "$cmd" &>/dev/null; then
+    PYTHON_CMD="$cmd"
+    break
+  fi
+done
+
 # Kill a process and its entire tree (cross-platform)
 kill_tree() {
   local pid="$1"
@@ -60,7 +69,7 @@ case "$ACTION" in
     sleep 1
 
     # Start Python HTTP server with custom handler
-    python3 "$PLUGIN_ROOT/scripts/gui-server.py" "$PLUGIN_ROOT" "$DATA_DIR" "$PORT" &
+    $PYTHON_CMD "$PLUGIN_ROOT/scripts/gui-server.py" "$PLUGIN_ROOT" "$DATA_DIR" "$PORT" &
     SERVER_PID=$!
     echo "$SERVER_PID" > "$PID_FILE"
 

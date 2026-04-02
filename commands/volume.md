@@ -33,7 +33,17 @@ cat "${CLAUDE_PLUGIN_DATA}/config.json"
 3. Update the volume in config.json:
 
 ```bash
-python3 -c "
+# Detect Python (python3, python, or py)
+PYTHON_CMD=""
+for cmd in python3 python py; do
+  if command -v "$cmd" &>/dev/null; then
+    PYTHON_CMD="$cmd"
+    break
+  fi
+done
+[ -z "$PYTHON_CMD" ] && echo "Python not found" && exit 1
+
+$PYTHON_CMD -c "
 import json, sys, os
 cfg_path = '${CLAUDE_PLUGIN_DATA}/config.json'
 os.makedirs(os.path.dirname(cfg_path), exist_ok=True)
