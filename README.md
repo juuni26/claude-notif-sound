@@ -226,7 +226,7 @@ notif-sound/
 
 ### How It Works
 
-This plugin uses [Claude Code hooks](https://code.claude.com/docs/hooks) — user-defined shell commands that execute automatically at specific lifecycle points. When a hook event fires, Claude Code runs `play-sound.sh` which:
+This plugin uses [Claude Code hooks](https://code.claude.com/docs/en/hooks) — user-defined shell commands that execute automatically at specific lifecycle points. When a hook event fires, Claude Code runs `play-sound.sh` which:
 
 1. Checks if a previous sound is still playing (PID-based dedup) — skips if so
 2. Reads volume from `config.json`
@@ -248,5 +248,5 @@ This plugin uses [Claude Code hooks](https://code.claude.com/docs/hooks) — use
 
 ## References
 
-- [Claude Code Hooks](https://code.claude.com/docs/hooks) — full hooks reference
+- [Claude Code Hooks](https://code.claude.com/docs/en/hooks) — full hooks reference
 - [Claude Code Documentation](https://code.claude.com/docs) — full docs index
