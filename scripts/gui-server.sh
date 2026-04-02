@@ -32,7 +32,12 @@ kill_tree() {
 
 # Kill any process listening on our port
 kill_port() {
-  if command -v netstat &>/dev/null; then
+  if command -v lsof &>/dev/null; then
+    # macOS/Linux: use lsof (check first — netstat exists on macOS but uses different flags)
+    lsof -ti :"$PORT" 2>/dev/null | while read -r pid; do
+      kill_tree "$pid"
+    done
+  elif command -v netstat &>/dev/null; then
     # Windows: parse netstat for PIDs on our port
     netstat -ano 2>/dev/null | grep "127.0.0.1:$PORT" | grep "LISTENING" | while read -r line; do
       local pid
@@ -40,11 +45,6 @@ kill_port() {
       if [ -n "$pid" ] && [ "$pid" != "0" ]; then
         kill_tree "$pid"
       fi
-    done
-  elif command -v lsof &>/dev/null; then
-    # macOS/Linux: use lsof
-    lsof -ti :"$PORT" 2>/dev/null | while read -r pid; do
-      kill_tree "$pid"
     done
   fi
 }
@@ -69,6 +69,10 @@ case "$ACTION" in
     sleep 1
 
     # Start Python HTTP server with custom handler
+    if [ -z "$PYTHON_CMD" ]; then
+      echo "Error: Python not found. Install python3, python, or py."
+      exit 1
+    fi
     $PYTHON_CMD "$PLUGIN_ROOT/scripts/gui-server.py" "$PLUGIN_ROOT" "$DATA_DIR" "$PORT" &
     SERVER_PID=$!
     echo "$SERVER_PID" > "$PID_FILE"

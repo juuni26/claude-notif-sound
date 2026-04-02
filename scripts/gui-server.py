@@ -1,5 +1,10 @@
-#!/usr/bin/env python3
-"""notif-sound GUI server — serves web dashboard and API on port 6998."""
+#!/usr/bin/env python
+"""notif-sound GUI server — serves web dashboard and API on port 6998.
+
+Note: This script is always launched via python3/python/py (via gui-server.sh),
+so the shebang is for reference only. Using 'python' instead of 'python3' here
+indicates compatibility with any Python version.
+"""
 
 import http.server
 import json
@@ -386,12 +391,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return
             body = self.rfile.read(content_length)
 
-            # Extract boundary from content type
-            boundary_match = re.search(r"boundary=(.+)", content_type)
+            # Extract boundary from content type (RFC 2046, RFC 7578)
+            # Matches: boundary=value or boundary="value", stops at semicolon or end
+            boundary_match = re.search(r"boundary=([^;\r\n]+)", content_type)
             if not boundary_match:
                 self._json_response({"error": "No boundary found"}, 400)
                 return
-            boundary = boundary_match.group(1).strip().encode()
+            # Strip whitespace and quotes (per RFC 7578)
+            boundary = boundary_match.group(1).strip().strip('"').encode()
 
             # Parse multipart parts
             parts = body.split(b"--" + boundary)

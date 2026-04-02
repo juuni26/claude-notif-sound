@@ -68,12 +68,14 @@ fi
 SOUND="${CANDIDATES[$((RANDOM % ${#CANDIDATES[@]}))]}"
 
 # Detect OS and play
+PLAYED=false
 case "$OS" in
   Darwin)
     # macOS: volume 1-10 -> 0.1-1.0
     AFPLAY_VOL=$($PYTHON_CMD -c "import sys; print(round(int(sys.argv[1]) / 10, 1))" "$VOLUME" 2>/dev/null || echo "0.4")
     afplay -v "$AFPLAY_VOL" "$SOUND" &
     echo $! > "$PID_FILE"
+    PLAYED=true
     ;;
   Linux)
     # Linux: volume 1-10 -> 6553-65536
@@ -81,6 +83,7 @@ case "$OS" in
       PA_VOL=$($PYTHON_CMD -c "import sys; print(int(int(sys.argv[1]) * 6553.6))" "$VOLUME" 2>/dev/null || echo "26214")
       paplay --volume="$PA_VOL" "$SOUND" &
       echo $! > "$PID_FILE"
+      PLAYED=true
     elif command -v aplay &>/dev/null; then
       # aplay only supports .wav — re-filter candidates
       WAV_ONLY=()
@@ -91,6 +94,7 @@ case "$OS" in
       SOUND="${WAV_ONLY[$((RANDOM % ${#WAV_ONLY[@]}))]}"
       aplay "$SOUND" &
       echo $! > "$PID_FILE"
+      PLAYED=true
     fi
     ;;
   MINGW*|MSYS*)
@@ -100,6 +104,7 @@ case "$OS" in
       SAFE_SOUND="${WIN_SOUND//\'/\'\'}"
       powershell.exe -c "(New-Object Media.SoundPlayer '$SAFE_SOUND').PlaySync()" &
       echo $! > "$PID_FILE"
+      PLAYED=true
     fi
     ;;
   *)
@@ -108,16 +113,20 @@ case "$OS" in
       PA_VOL=$($PYTHON_CMD -c "import sys; print(int(int(sys.argv[1]) * 6553.6))" "$VOLUME" 2>/dev/null || echo "26214")
       paplay --volume="$PA_VOL" "$SOUND" &
       echo $! > "$PID_FILE"
+      PLAYED=true
     elif command -v powershell.exe &>/dev/null; then
       WIN_SOUND="$(cygpath -w "$SOUND" 2>/dev/null || echo "$SOUND")"
       SAFE_SOUND="${WIN_SOUND//\'/\'\'}"
       powershell.exe -c "(New-Object Media.SoundPlayer '$SAFE_SOUND').PlaySync()" &
       echo $! > "$PID_FILE"
+      PLAYED=true
     fi
     ;;
 esac
 
-# Bounce Dock icon (macOS) / flash taskbar (Linux terminals)
-printf '\a'
+# Bounce Dock icon (macOS) / flash taskbar (Linux terminals) — only if sound was played
+if [ "$PLAYED" = true ]; then
+  printf '\a'
+fi
 
 exit 0

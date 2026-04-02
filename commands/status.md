@@ -34,15 +34,18 @@ else
 fi
 ```
 
-4. Check python is available (python, python3, or py):
+4. Check python is available (python3, python, or py):
 
 ```bash
+PYTHON_FOUND=false
 for cmd in python3 python py; do
   if command -v "$cmd" &>/dev/null; then
     "$cmd" --version
+    PYTHON_FOUND=true
     break
   fi
-done || echo "PYTHON_MISSING"
+done
+[ "$PYTHON_FOUND" = false ] && echo "PYTHON_MISSING"
 ```
 
 5. Read current config:

@@ -24,14 +24,14 @@ You don't need to be a developer to set this up. Just follow these steps inside 
 
 ### Prerequisites
 
-You likely already have everything you need. The plugin uses tools that come pre-installed on most systems.
+You likely already have everything you need. The plugin uses tools that come pre-installed on most systems and auto-detects available Python versions.
 
 | Platform | What you need | Already installed? |
 |----------|--------------|-------------------|
-| **macOS** | `afplay`, `python3` | Yes — both are built-in |
-| **Linux** | `python3`, `paplay` or `aplay` | Usually yes |
-| **Windows** | `python3`, `powershell` | `powershell` is built-in. Install Python 3 from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3` |
-| **WSL** | `python3` | Yes — pre-installed in WSL |
+| **macOS** | `afplay`, Python 3 | Yes — `afplay` is built-in. Python auto-detects `python3` or `python` |
+| **Linux** | Python 3, `paplay` or `aplay` | Usually yes — auto-detects `python3`, `python`, or `py` |
+| **Windows** | Python 3, `powershell` | `powershell` is built-in. Install Python 3 from [python.org](https://www.python.org/downloads/) or via `winget install Python.Python.3`. Auto-detects `python`, `python3`, or `py` |
+| **WSL** | Python 3 | Yes — pre-installed. Auto-detects `python3`, `python`, or `py` |
 
 ### Installation
 
@@ -117,7 +117,6 @@ To stop the dashboard server:
 | `/notif-sound:gui` | Open web dashboard |
 | `/notif-sound:status` | Check plugin health |
 | `/notif-sound:verify` | Verify setup and fix issues |
-| `/notif-sound:test-hooks` | Test all 4 hooks sequentially |
 | `/notif-sound:uninstall` | Cleanly remove the plugin |
 
 ---
@@ -214,7 +213,6 @@ notif-sound/
 │   ├── remove.md            # /notif-sound:remove
 │   ├── status.md            # /notif-sound:status
 │   ├── test.md              # /notif-sound:test
-│   ├── test-hooks.md        # /notif-sound:test-hooks
 │   ├── uninstall.md         # /notif-sound:uninstall
 │   ├── verify.md            # /notif-sound:verify
 │   └── volume.md            # /notif-sound:volume
