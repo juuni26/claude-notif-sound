@@ -75,6 +75,9 @@ The easiest way to manage your sounds and settings is through the built-in web d
 /notif-sound:gui
 ```
 
+<img width="1546" height="1850" alt="image" src="https://github.com/user-attachments/assets/830145bb-0fcd-4352-800a-7304f88422cf" />
+
+
 This opens a web dashboard at `http://localhost:6998` where you can:
 
 - **Adjust volume** — drag the slider from 1 to 10 (macOS/Linux only; hidden on Windows)
