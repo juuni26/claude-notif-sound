@@ -93,7 +93,7 @@ To stop the dashboard server:
 
 ## Features
 
-- **4 hook events** — Stop, AskUserQuestion, PermissionRequest, Notification
+- **4 hook events** — Stop, PreToolUse (AskUserQuestion), PermissionRequest, Notification
 - **Volume control** — intuitive 1-10 scale via `/notif-sound:volume` or GUI slider (macOS/Linux only; Windows uses system volume)
 - **Custom sounds** — add your own sound files, a random one plays each time
 - **Web GUI dashboard** — visual sound management at `localhost:6998`

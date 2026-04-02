@@ -308,14 +308,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             filename = urllib.parse.unquote(parsed.path[len("/sounds/"):])
             file_path = _safe_path(SOUNDS_DIR, filename)
             if file_path and os.path.isfile(file_path):
-                self.send_response(200)
                 if file_path.endswith(".mp3"):
-                    self.send_header("Content-Type", "audio/mpeg")
+                    content_type = "audio/mpeg"
                 elif file_path.endswith(".wav"):
-                    self.send_header("Content-Type", "audio/wav")
+                    content_type = "audio/wav"
                 else:
                     self._json_response({"error": "Unsupported format"}, 400)
                     return
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", os.path.getsize(file_path))
                 self.end_headers()
                 with open(file_path, "rb") as f:

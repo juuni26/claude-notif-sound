@@ -9,3 +9,6 @@ __pycache__/
 
 # Local dev settings
 .claude/settings.local.json
+
+# Social media posts (local only)
+social-posts/

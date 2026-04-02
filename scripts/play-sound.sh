@@ -68,6 +68,13 @@ case "$OS" in
       paplay --volume="$PA_VOL" "$SOUND" &
       echo $! > "$PID_FILE"
     elif command -v aplay &>/dev/null; then
+      # aplay only supports .wav — re-filter candidates
+      WAV_ONLY=()
+      for f in "${CANDIDATES[@]}"; do
+        [[ "$f" == *.wav ]] && WAV_ONLY+=("$f")
+      done
+      [ ${#WAV_ONLY[@]} -eq 0 ] && exit 0
+      SOUND="${WAV_ONLY[$((RANDOM % ${#WAV_ONLY[@]}))]}"
       aplay "$SOUND" &
       echo $! > "$PID_FILE"
     fi
