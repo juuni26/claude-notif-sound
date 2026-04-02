@@ -14,6 +14,8 @@ So I built **notif-sound**. It plays a sound the moment Claude needs my attentio
 
 ## Demo
 
+https://www.loom.com/share/df2f1bc12d5d405ca79439c756cc3919
+
 <!-- Video demo will be added here -->
 
 ## Getting Started
