@@ -8,9 +8,9 @@
 
 ## The Problem
 
-I open Claude Code, prompt something, switch tabs, lose focus — and don't even realize it's already finished or waiting for my next action. That's frustrating. There's no official notification solution — Claude Code runs completely silent.
+I open Claude Code, prompt something, switch tabs, lose focus — and don't even realize it's already finished or waiting for my next action. That's kinda frustrating. There's no official notification solution.  i checked — Claude Code runs completely silent. no sound.
 
-So I built **notif-sound**. It plays a sound the moment Claude needs my attention. I've been using it personally and I'm sharing it here so anyone with the same frustration can use it too.
+So that's why I built this **notif-sound** plugin. It plays a sound the moment Claude needs my attention. I’ve been using it personally, and i’m sharing it here for anyone facing the same issue. sure, you can set this up yourself with scripts and Claude hooks — but this plugin makes it more simple.
 
 ## Demo
 
